@@ -762,11 +762,13 @@ async function handleBingImagesRequest() {
 async function handleImageRequest(pathname, DATABASE) {
   //const result = await DATABASE.prepare('SELECT url FROM media WHERE key = ?').bind(pathname).first();
   //if (result) {
-    const url = new URL(result.url);
-    url.hostname = 'telegra.ph';
-    return fetch(url);
+  //  const url = new URL(result.url);
+  //  url.hostname = 'telegra.ph';
+  //  return fetch(url);
   //}
   //return new Response(null, { status: 404 });
+  const url = new URL(`https://telegra.ph${pathname}`);
+  return fetch(url);
 }
 
 async function handleDeleteImagesRequest(request, DATABASE) {
