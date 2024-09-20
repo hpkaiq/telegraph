@@ -740,7 +740,8 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
 }
 
 async function handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN) {
-  const fileId = pathname.split('.').shift().toLowerCase();
+  const cleanedPathname = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+  const fileId = cleanedPathname.split('.').shift().toLowerCase();
   const result = await DATABASE.prepare('SELECT file_path, fp_ts FROM media WHERE file_id = ?').bind(fileId).first();
 
   if (result) {
@@ -755,7 +756,7 @@ async function handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN) {
       }
       const filePathData = await filePathResponse.json();
       filePath = filePathData.result.file_path;
-      await DATABASE.prepare(`update media set fp_ts = ${ts} , file_path = '${filePath}' where file_id = '${file_id}'`).run();
+      await DATABASE.prepare(`update media set fp_ts = ? , file_path = ? where file_id = ?`).bind(ts, filePath, fileId).run();
     }
 
     const telegramFileUrl = `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${filePath}`;
