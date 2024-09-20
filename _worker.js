@@ -715,7 +715,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     const filePathData = await filePathResponse.json();
     const filePath = filePathData.result.file_path;
 
-    const existingMedia = await DATABASE.prepare('SELECT url FROM media WHERE file_path = ?').bind(filePath).first();
+    const existingMedia = await DATABASE.prepare('SELECT url FROM media WHERE file_id = ?').bind(fileId).first();
     if (existingMedia) {
       return new Response(JSON.stringify({ data: existingMedia.url }), {
         status: 200,
