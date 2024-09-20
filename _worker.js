@@ -679,7 +679,7 @@ async function generateAdminPage(DATABASE) {
 async function fetchMediaData(DATABASE) {
   const result = await DATABASE.prepare('SELECT * FROM media ORDER BY timestamp DESC').all();
   return result.results.map(row => ({
-    key: row.file_path,
+    key: row.file_id,
     timestamp: row.timestamp,
     url: row.url
   }));
@@ -740,13 +740,25 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
 }
 
 async function handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN) {
-  const cleanedPathname = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+  const fileId = pathname.split('.').shift().toLowerCase();
+  const result = await DATABASE.prepare('SELECT file_path, fp_ts FROM media WHERE file_id = ?').bind(fileId).first();
 
-  const result = await DATABASE.prepare('SELECT file_path, url FROM media WHERE file_path = ?').bind(cleanedPathname).first();
   if (result) {
-    const filePath = result.file_path;
-    const telegramFileUrl = `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${filePath}`;
+    let filePath = result.file_path;
+    const fpTs = result.fp_ts;
+    const ts = Date.now()
+    const tsDiff = ts - fpTs;
+    if(tsDiff > 3600000){
+      const filePathResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
+      if (!filePathResponse.ok) {
+        return new Response(null, { status: 404 });
+      }
+      const filePathData = await filePathResponse.json();
+      filePath = filePathData.result.file_path;
+      await DATABASE.prepare(`update media set fp_ts = ${ts} , file_path = '${filePath}' where file_id = '${file_id}'`).run();
+    }
 
+    const telegramFileUrl = `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${filePath}`;
     const response = await fetch(telegramFileUrl);
     if (response.ok) {
       const fileExtension = filePath.split('.').pop().toLowerCase();
@@ -798,7 +810,7 @@ async function handleDeleteImagesRequest(request, DATABASE) {
       return new Response(JSON.stringify({ message: '没有要删除的项' }), { status: 400 });
     }
     const placeholders = keysToDelete.map(() => '?').join(',');
-    await DATABASE.prepare(`DELETE FROM media WHERE file_path IN (${placeholders})`).bind(...keysToDelete).run();
+    await DATABASE.prepare(`DELETE FROM media WHERE file_id IN (${placeholders})`).bind(...keysToDelete).run();
     return new Response(JSON.stringify({ message: '删除成功' }), { status: 200 });
   } catch (error) {
     console.error('删除图片时出错:', error);
