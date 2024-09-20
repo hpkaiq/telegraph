@@ -735,7 +735,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     });
   } catch (error) {
     console.error('内部服务器错误:', error);
-    return new Response(JSON.stringify({ error: `内部服务器错误 ${imageURL}` }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: '内部服务器错误imageURL' + imageURL }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
 
