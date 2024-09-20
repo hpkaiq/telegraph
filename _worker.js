@@ -727,7 +727,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     const timestamp = Date.now();
     const imageURL = `https://${domain}/${file_id}.${fileExtension}`;
 
-    await DATABASE.prepare('INSERT INTO media (file_id, fp_ts, file_path, timestamp, url) VALUES (?, ?, ?, ?, ?)').bind(fileId, timestamp, filePath, timestamp, imageURL).run();
+    //await DATABASE.prepare('INSERT INTO media (file_id, fp_ts, file_path, timestamp, url) VALUES (?, ?, ?, ?, ?)').bind(fileId, timestamp, filePath, timestamp, imageURL).run();
 
     return new Response(JSON.stringify({ data: imageURL }), {
       status: 200,
