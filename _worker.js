@@ -724,7 +724,8 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     }
 
     const timestamp = Date.now();
-    const imageURL = `https://${domain}/${filePath}`;
+    const fileExtension = filePath.split('.').pop().toLowerCase();
+    const imageURL = `https://${domain}/${fileId}.${fileExtension}`;
 
     await DATABASE.prepare('INSERT INTO media (file_path, timestamp, url) VALUES (?, ?, ?)').bind(filePath, timestamp, imageURL).run();
 
