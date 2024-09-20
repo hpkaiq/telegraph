@@ -714,7 +714,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
 
     const filePathData = await filePathResponse.json();
     const filePath = filePathData.result.file_path;
-    const fileExtension = filePath.split('.').pop().toLowerCase();
+    //const fileExtension = filePath.split('.').pop().toLowerCase();
 
     const existingMedia = await DATABASE.prepare('SELECT url FROM media WHERE file_id = ?').bind(fileId).first();
     if (existingMedia) {
@@ -725,7 +725,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     }
 
     const timestamp = Date.now();
-    const imageURL = `https://${domain}/${file_id}.${fileExtension}`;
+    const imageURL = `https://${domain}/${file_id}`;
 
     //await DATABASE.prepare('INSERT INTO media (file_id, fp_ts, file_path, timestamp, url) VALUES (?, ?, ?, ?, ?)').bind(fileId, timestamp, filePath, timestamp, imageURL).run();
 
