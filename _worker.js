@@ -741,7 +741,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
 
 async function handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN) {
   const cleanedPathname = pathname.startsWith('/') ? pathname.slice(1) : pathname;
-  const fileId = cleanedPathname.split('.').shift().toLowerCase();
+  const fileId = cleanedPathname.split('.').shift();
   const result = await DATABASE.prepare('SELECT file_path, fp_ts FROM media WHERE file_id = ?').bind(fileId).first();
 
   if (result) {
