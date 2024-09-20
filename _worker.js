@@ -746,7 +746,7 @@ async function handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN) {
   if (result) {
     let filePath = result.file_path;
     const fpTs = result.fp_ts;
-    const ts = Date.now()
+    const ts = Date.now();
     const tsDiff = ts - fpTs;
     if(tsDiff > 3600000){
       const filePathResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
