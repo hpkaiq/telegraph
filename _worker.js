@@ -716,13 +716,13 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     const filePath = filePathData.result.file_path;
     //const fileExtension = filePath.split('.').pop().toLowerCase();
 
-    const existingMedia = await DATABASE.prepare('SELECT url FROM media WHERE file_id = ?').bind(fileId).first();
-    if (existingMedia) {
-      return new Response(JSON.stringify({ data: existingMedia.url }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    //const existingMedia = await DATABASE.prepare('SELECT url FROM media WHERE file_id = ?').bind(fileId).first();
+    //if (existingMedia) {
+    //  return new Response(JSON.stringify({ data: existingMedia.url }), {
+    //    status: 200,
+    //    headers: { 'Content-Type': 'application/json' }
+    //  });
+    //}
 
     const timestamp = Date.now();
     const imageURL = `https://${domain}/${file_id}`;
