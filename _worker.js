@@ -22,7 +22,7 @@ export default {
             case '/delete-images':
                 return handleDeleteImagesRequest(request, DATABASE);
             default:
-                return await handleImageRequest(request, DATABASE, TG_BOT_TOKEN);
+                return await handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN);
         }
     }
 };
@@ -763,7 +763,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     }
 }
 
-async function handleImageRequest(request, DATABASE, TG_BOT_TOKEN) {
+async function handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN) {
     const requestedUrl = request.url;
     const result = await DATABASE.prepare('SELECT fileId,filePath,fpTs FROM media WHERE url = ?').bind(requestedUrl).first();
     if (result) {
