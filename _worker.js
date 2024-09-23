@@ -1,48 +1,48 @@
 export default {
-  async fetch(request, env) {
-    const { pathname } = new URL(request.url);
-    const domain = env.DOMAIN;
-    const DATABASE = env.DATABASE;
-    const USERNAME = env.USERNAME;
-    const PASSWORD = env.PASSWORD;
-    const adminPath = env.ADMIN_PATH;
-    const enableAuth = env.ENABLE_AUTH === 'true';
-    const TG_BOT_TOKEN = env.TG_BOT_TOKEN;
-    const TG_CHAT_ID = env.TG_CHAT_ID;
+    async fetch(request, env) {
+        const { pathname } = new URL(request.url);
+        const domain = env.DOMAIN;
+        const DATABASE = env.DATABASE;
+        const USERNAME = env.USERNAME;
+        const PASSWORD = env.PASSWORD;
+        const adminPath = env.ADMIN_PATH;
+        const enableAuth = env.ENABLE_AUTH === 'true';
+        const TG_BOT_TOKEN = env.TG_BOT_TOKEN;
+        const TG_CHAT_ID = env.TG_CHAT_ID;
 
-    switch (pathname) {
-      case '/':
-        return await handleRootRequest(request, USERNAME, PASSWORD, enableAuth);
-      case `/${adminPath}`:
-        return await handleAdminRequest(DATABASE, request, USERNAME, PASSWORD);
-      case '/upload':
-        return request.method === 'POST' ? await handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASSWORD, domain, TG_BOT_TOKEN, TG_CHAT_ID) : new Response('Method Not Allowed', { status: 405 });
-      case '/bing-images':
-        return handleBingImagesRequest();
-      case '/delete-images':
-        return handleDeleteImagesRequest(request, DATABASE);
-      default:
-        return await handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN, domain);
+        switch (pathname) {
+            case '/':
+                return await handleRootRequest(request, USERNAME, PASSWORD, enableAuth);
+            case `/${adminPath}`:
+                return await handleAdminRequest(DATABASE, request, USERNAME, PASSWORD);
+            case '/upload':
+                return request.method === 'POST' ? await handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASSWORD, domain, TG_BOT_TOKEN, TG_CHAT_ID) : new Response('Method Not Allowed', { status: 405 });
+            case '/bing-images':
+                return handleBingImagesRequest();
+            case '/delete-images':
+                return handleDeleteImagesRequest(request, DATABASE);
+            default:
+                return await handleImageRequest(request, DATABASE, TG_BOT_TOKEN);
+        }
     }
-  }
 };
 
 let isAuthenticated = false;
 
 function authenticate(request, USERNAME, PASSWORD) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) return false;
-  return isValidCredentials(authHeader, USERNAME, PASSWORD);
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) return false;
+    return isValidCredentials(authHeader, USERNAME, PASSWORD);
 }
 
 async function handleRootRequest(request, USERNAME, PASSWORD, enableAuth) {
-  if (enableAuth) {
-    if (!authenticate(request, USERNAME, PASSWORD)) {
-      return new Response('Unauthorized', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Admin"' } });
+    if (enableAuth) {
+        if (!authenticate(request, USERNAME, PASSWORD)) {
+            return new Response('Unauthorized', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Admin"' } });
+        }
     }
-  }
-  isAuthenticated = true;
-  return new Response(`
+    isAuthenticated = true;
+    return new Response(`
   <!DOCTYPE html>
   <html lang="zh-CN">
     <head>
@@ -429,46 +429,47 @@ async function handleRootRequest(request, USERNAME, PASSWORD, enableAuth) {
 }
 
 async function handleAdminRequest(DATABASE, request, USERNAME, PASSWORD) {
-  if (!authenticate(request, USERNAME, PASSWORD)) {
-    return new Response('Unauthorized', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Admin"' } });
-  }
-  return await generateAdminPage(DATABASE);
+    if (!authenticate(request, USERNAME, PASSWORD)) {
+        return new Response('Unauthorized', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Admin"' } });
+    }
+    return await generateAdminPage(DATABASE);
 }
 
 function isValidCredentials(authHeader, USERNAME, PASSWORD) {
-  const base64Credentials = authHeader.split(' ')[1];
-  const credentials = atob(base64Credentials).split(':');
-  const username = credentials[0];
-  const password = credentials[1];
-  return username === USERNAME && password === PASSWORD;
+    const base64Credentials = authHeader.split(' ')[1];
+    const credentials = atob(base64Credentials).split(':');
+    const username = credentials[0];
+    const password = credentials[1];
+    return username === USERNAME && password === PASSWORD;
 }
 
 async function generateAdminPage(DATABASE) {
-  const mediaData = await fetchMediaData(DATABASE);
-  const mediaHtml = mediaData.map(({timestamp, url }) => {
-    const fileExtension = url.split('.').pop().toLowerCase();
-    if (fileExtension === 'mp4') {
-      return `
+    const mediaData = await fetchMediaData(DATABASE);
+    const mediaHtml = mediaData.map(({ url }) => {
+        const fileExtension = url.split('.').pop().toLowerCase();
+        const timestamp = url.split('/').pop().split('.')[0];
+        if (fileExtension === 'mp4') {
+            return `
       <div class="media-container" data-key="${url}" onclick="toggleImageSelection(this)">
         <div class="media-type">视频</div>
         <video class="gallery-video" style="width: 100%; height: 100%; object-fit: contain;" data-src="${url}" controls>
           <source src="${url}" type="video/mp4">
           您的浏览器不支持视频标签。
         </video>
-        <div class="upload-time">上传时间: ${new Date(timestamp).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</div>
+        <div class="upload-time">上传时间: ${new Date(parseInt(timestamp)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</div>
       </div>
       `;
-    } else {
-      return `
+        } else {
+            return `
       <div class="image-container" data-key="${url}" onclick="toggleImageSelection(this)">
         <img data-src="${url}" alt="Image" class="gallery-image lazy">
-        <div class="upload-time">上传时间: ${new Date(timestamp).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</div>
+        <div class="upload-time">上传时间: ${new Date(parseInt(timestamp)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</div>
       </div>
       `;
-    }
-  }).join('');
-  
-  const html = `
+        }
+    }).join('');
+
+    const html = `
   <!DOCTYPE html>
   <html>
     <head>
@@ -679,121 +680,160 @@ async function generateAdminPage(DATABASE) {
     </body>
   </html>
   `;
-  return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
 
 async function fetchMediaData(DATABASE) {
-  const result = await DATABASE.prepare('SELECT timestamp, url FROM media ORDER BY timestamp DESC').all();
-  return result.results.map(row => ({
-    timestamp: row.timestamp,
-    url: row.url
-  }));
+    const result = await DATABASE.prepare('SELECT fileId, url FROM media').all();
+    const mediaData = result.results.map(row => {
+        const timestamp = parseInt(row.url.split('/').pop().split('.')[0]);
+        return {
+            fileId: row.fileId,
+            url: row.url,
+            timestamp: timestamp
+        };
+    });
+    mediaData.sort((a, b) => b.timestamp - a.timestamp);
+    return mediaData.map(({ fileId, url }) => ({
+        fileId,
+        url
+    }));
 }
 
 async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASSWORD, domain, TG_BOT_TOKEN, TG_CHAT_ID) {
-  try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    if (!file) throw new Error('缺少文件');
-    if (enableAuth && !authenticate(request, USERNAME, PASSWORD)) {
-      return new Response('Unauthorized', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Admin"' } });
+    try {
+        const formData = await request.formData();
+        const file = formData.get('file');
+        if (!file) throw new Error('缺少文件');
+        if (enableAuth && !authenticate(request, USERNAME, PASSWORD)) {
+            return new Response('Unauthorized', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Admin"' } });
+        }
+        const uploadFormData = new FormData();
+        uploadFormData.append("chat_id", TG_CHAT_ID);
+        let method;
+        let fileId;
+        if (file.type.startsWith('video/')) {
+            uploadFormData.append("video", file);
+            method = 'sendVideo';
+        } else if (file.type === 'image/gif') {
+            uploadFormData.append("animation", file);
+            method = 'sendAnimation';
+        } else {
+            uploadFormData.append("photo", file);
+            method = 'sendPhoto';
+        }
+        const telegramResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/${method}`, {
+            method: 'POST',
+            body: uploadFormData
+        });
+        if (!telegramResponse.ok) {
+            const errorData = await telegramResponse.json();
+            throw new Error(errorData.description || '上传到 Telegram 失败');
+        }
+        const responseData = await telegramResponse.json();
+        if (file.type.startsWith('video/')) {
+            const video = responseData.result.video;
+            if (video) {
+                fileId = video.file_id;
+            }
+        } else if (file.type === 'image/gif') {
+            const document = responseData.result.document;
+            if (document) {
+                fileId = document.file_id;
+            }
+        } else {
+            const photos = responseData.result.photo;
+            if (photos && photos.length > 0) {
+                fileId = photos.reduce((max, photo) => {
+                    return photo.file_size > max.file_size ? photo : max;
+                }).file_id;
+            }
+        }
+        const fileExtension = file.name.split('.').pop();
+        const timestamp = Date.now();
+        const imageURL = `https://${domain}/${timestamp}.${fileExtension}`;
+        await DATABASE.prepare('INSERT OR IGNORE INTO media (fileId, url) VALUES (?, ?)').bind(fileId, imageURL).run();
+        return new Response(JSON.stringify({ data: imageURL }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        console.error('内部服务器错误:', error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
-    const uploadFormData = new FormData();
-    uploadFormData.append("chat_id", TG_CHAT_ID);
-    if (file.type.startsWith('video/')) {
-      uploadFormData.append("video", file);
-    } else {
-      uploadFormData.append("photo", file);
-    }
-    const telegramResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/send${file.type.startsWith('video/') ? 'Video' : 'Photo'}`, {
-      method: 'POST',
-      body: uploadFormData
-    });
-    if (!telegramResponse.ok) {
-      const errorData = await telegramResponse.json();
-      throw new Error(errorData.description || '上传到 Telegram 失败');
-    }
-    const responseData = await telegramResponse.json();
-    const fileId = file.type.startsWith('video/') 
-      ? responseData.result.video.file_id 
-      : responseData.result.photo[responseData.result.photo.length - 1].file_id;
-    const fileExtension = file.name.split('.').pop();
-    const timestamp = Date.now();
-    const imageURL = `https://${domain}/${fileId}.${fileExtension}`;
-    await DATABASE.prepare('INSERT OR IGNORE INTO media (timestamp, url) VALUES (?, ?)').bind(timestamp, imageURL).run();
-    return new Response(JSON.stringify({ data: imageURL }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    console.error('内部服务器错误:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-  }
 }
 
-async function handleImageRequest(pathname, DATABASE, TG_BOT_TOKEN, domain) {
-  const urlToQuery = `https://${domain}${pathname}`;
-  const result = await DATABASE.prepare('SELECT * FROM media WHERE url = ?').bind(urlToQuery).first();
-  if (result) {
-    const fileId = pathname.split('/').pop().split('.')[0];
-    const getFileResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
-    if (!getFileResponse.ok) {
-      return new Response(null, { status: 404 });
-    }
-    const fileData = await getFileResponse.json();
-    const filePath = fileData.result.file_path;
-    const telegramFileUrl = `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${filePath}`;
-    const response = await fetch(telegramFileUrl);
-    if (response.ok) {
-      const fileExtension = fileId.split('.').pop();
-      let contentType = 'text/plain';
-      if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
-        contentType = 'image/jpeg';
-      } else if (fileExtension === 'png') {
-        contentType = 'image/png';
-      }
-      return new Response(response.body, { status: response.status, headers: { 'Content-Type': contentType } });
+async function handleImageRequest(request, DATABASE, TG_BOT_TOKEN) {
+    const requestedUrl = request.url;
+    const result = await DATABASE.prepare('SELECT fileId,filePath,fpTs FROM media WHERE url = ?').bind(requestedUrl).first();
+    if (result) {
+        const fileId = result.fileId;
+        let filePath = result.filePath;
+        let fpTs = result.fpTs;
+        const ts = Date.now();
+        if (filePath === null || ts - fpTs > 3600000){
+            const getFileResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
+            if (!getFileResponse.ok) {
+                return new Response(null, { status: 404 });
+            }
+            const fileData = await getFileResponse.json();
+            filePath = fileData.result.file_path;
+            await DATABASE.prepare('update media set filePath = ?, fpTs = ? where url = ?').bind(filePath, ts, requestedUrl).run();
+        }
+
+        const telegramFileUrl = `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${filePath}`;
+        const response = await fetch(telegramFileUrl);
+        if (response.ok) {
+            const fileExtension = requestedUrl.split('.').pop();
+            let contentType = 'text/plain';
+            if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+                contentType = 'image/jpeg';
+            } else if (fileExtension === 'png') {
+                contentType = 'image/png';
+            } else if (fileExtension === 'mp4') {
+                contentType = 'video/mp4';
+            }
+            return new Response(response.body, { status: response.status, headers: { 'Content-Type': contentType } });
+        } else {
+            return new Response(null, { status: 404 });
+        }
     } else {
-      return new Response(null, { status: 404 });
+        const url = new URL(`https://telegra.ph${pathname}`);
+        return fetch(url);
     }
-  } else {
-      const url = new URL(`https://telegra.ph${pathname}`);
-      return fetch(url);
-  }
-  return new Response(null, { status: 404 });
 }
 
 async function handleBingImagesRequest() {
-  const res = await fetch(`https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=5`);
-  const bing_data = await res.json();
-  const images = bing_data.images.map(image => ({
-    url: `https://cn.bing.com${image.url}`
-  }));
-  const return_data = {
-    status: true,
-    message: "操作成功",
-    data: images
-  };
-  return new Response(JSON.stringify(return_data), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
+    const res = await fetch(`https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=5`);
+    const bing_data = await res.json();
+    const images = bing_data.images.map(image => ({
+        url: `https://cn.bing.com${image.url}`
+    }));
+    const return_data = {
+        status: true,
+        message: "操作成功",
+        data: images
+    };
+    return new Response(JSON.stringify(return_data), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+    });
 }
 
 async function handleDeleteImagesRequest(request, DATABASE) {
-  if (request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
-  try {
-    const keysToDelete = await request.json();
-    if (keysToDelete.length === 0) {
-      return new Response(JSON.stringify({ message: '没有要删除的项' }), { status: 400 });
+    if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', { status: 405 });
     }
-    const placeholders = keysToDelete.map(() => '?').join(',');
-    await DATABASE.prepare(`DELETE FROM media WHERE url IN (${placeholders})`).bind(...keysToDelete).run();
-    return new Response(JSON.stringify({ message: '删除成功' }), { status: 200 });
-  } catch (error) {
-    console.error('删除图片时出错:', error);
-    return new Response(JSON.stringify({ error: '删除失败' }), { status: 500 });
-  }
+    try {
+        const keysToDelete = await request.json();
+        if (keysToDelete.length === 0) {
+            return new Response(JSON.stringify({ message: '没有要删除的项' }), { status: 400 });
+        }
+        const placeholders = keysToDelete.map(() => '?').join(',');
+        await DATABASE.prepare(`DELETE FROM media WHERE url IN (${placeholders})`).bind(...keysToDelete).run();
+        return new Response(JSON.stringify({ message: '删除成功' }), { status: 200 });
+    } catch (error) {
+        console.error('删除图片时出错:', error);
+        return new Response(JSON.stringify({ error: '删除失败' }), { status: 500 });
+    }
 }
