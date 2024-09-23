@@ -9,6 +9,7 @@ export default {
         const enableAuth = env.ENABLE_AUTH === 'true';
         const TG_BOT_TOKEN = env.TG_BOT_TOKEN;
         const TG_CHAT_ID = env.TG_CHAT_ID;
+        const FILE_PATH_EXPIRE_HOUR = 24;
 
         switch (pathname) {
             case '/':
@@ -22,7 +23,7 @@ export default {
             case '/delete-images':
                 return handleDeleteImagesRequest(request, DATABASE);
             default:
-                return await handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN);
+                return await handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN, FILE_PATH_EXPIRE_HOUR);
         }
     }
 };
@@ -763,7 +764,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
     }
 }
 
-async function handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN) {
+async function handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN, FILE_PATH_EXPIRE_HOUR) {
     const requestedUrl = request.url;
     const result = await DATABASE.prepare('SELECT fileId,filePath,fpTs FROM media WHERE url = ?').bind(requestedUrl).first();
     if (result) {
@@ -771,7 +772,7 @@ async function handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN) {
         let filePath = result.filePath;
         let fpTs = result.fpTs;
         const ts = Date.now();
-        if (filePath === null || ts - fpTs > 3600000){
+        if (filePath === null || ts - fpTs > FILE_PATH_EXPIRE_HOUR * 3600000){
             const getFileResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
             if (!getFileResponse.ok) {
                 return new Response(null, { status: 404 });
