@@ -9,7 +9,7 @@ export default {
         const enableAuth = env.ENABLE_AUTH === 'true';
         const TG_BOT_TOKEN = env.TG_BOT_TOKEN;
         const TG_CHAT_ID = env.TG_CHAT_ID;
-        const FILE_PATH_EXPIRE_HOUR = 24;
+        const FILE_PATH_EXPIRE_HOUR = 10;
 
         switch (pathname) {
             case '/':
