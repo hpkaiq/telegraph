@@ -789,17 +789,17 @@ async function handleImageRequest(pathname, request, DATABASE, TG_BOT_TOKEN, FIL
     if (result) {
         const fileId = result.fileId;
         let filePath = result.filePath;
-        let fpTs = result.fpTs;
-        const ts = Date.now();
-        if (filePath === null || ts - fpTs > FILE_PATH_EXPIRE_HOUR * 3600000) {
+        //let fpTs = result.fpTs;
+        //const ts = Date.now();
+        //if (filePath === null || ts - fpTs > FILE_PATH_EXPIRE_HOUR * 3600000) {
             const getFileResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`);
             if (!getFileResponse.ok) {
                 return new Response(null, { status: 404 });
             }
             const fileData = await getFileResponse.json();
             filePath = fileData.result.file_path;
-            await DATABASE.prepare('update media set filePath = ?, fpTs = ? where url = ?').bind(filePath, ts, requestedUrl).run();
-        }
+        //    await DATABASE.prepare('update media set filePath = ?, fpTs = ? where url = ?').bind(filePath, ts, requestedUrl).run();
+        //}
 
         const telegramFileUrl = `https://api.telegram.org/file/bot${TG_BOT_TOKEN}/${filePath}`;
         const response = await fetch(telegramFileUrl);
