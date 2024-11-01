@@ -22,7 +22,7 @@ export default {
       case '/delete-images':
         return handleDeleteImagesRequest(request, DATABASE);
       default:
-        return await handleImageRequest(request, DATABASE, TG_BOT_TOKEN);
+        return await handleImageRequest(request, DATABASE, TG_BOT_TOKEN, pathname);
     }
   }
 };
@@ -743,7 +743,7 @@ async function handleUploadRequest(request, DATABASE, enableAuth, USERNAME, PASS
   }
 }
 
-async function handleImageRequest(request, DATABASE, TG_BOT_TOKEN) {
+async function handleImageRequest(request, DATABASE, TG_BOT_TOKEN, pathname) {
   const requestedUrl = request.url;
   const cache = caches.default;
   const cacheKey = new Request(requestedUrl);
@@ -751,9 +751,13 @@ async function handleImageRequest(request, DATABASE, TG_BOT_TOKEN) {
   if (cachedResponse) return cachedResponse;
   const result = await DATABASE.prepare('SELECT fileId FROM media WHERE url = ?').bind(requestedUrl).first();
   if (!result) {
-    const notFoundResponse = new Response('资源不存在', { status: 404 });
-    await cache.put(cacheKey, notFoundResponse.clone());
-    return notFoundResponse;
+
+    const url = new URL(`https://telegra.ph${pathname}`);
+    return fetch(url);
+    
+    //const notFoundResponse = new Response('资源不存在', { status: 404 });
+    //await cache.put(cacheKey, notFoundResponse.clone());
+    //return notFoundResponse;
   }
   const fileId = result.fileId;
   let filePath;
