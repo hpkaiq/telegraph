@@ -2,6 +2,9 @@
 基于 Cloudflare Worker 和 Pages 的图床，轻松实现无服务器部署！
 
 # 更新日志
+## 2024年11月21日
+- 优化上传体验，默认开启压缩，加快文件上传速度。如需关闭，请将代码的238行修改为```enableCompression: false```
+
 ## 2024年11月1日
 - 修复上传后无法加载的问题
 
@@ -87,6 +90,8 @@ CREATE TABLE media (
 [Pages部署教程](https://github.com/0-RTT/telegraph?tab=readme-ov-file#pages%E9%83%A8%E7%BD%B2%E6%95%99%E7%A8%8B)
 
 [Worker部署教程](https://github.com/0-RTT/telegraph?tab=readme-ov-file#worker%E9%83%A8%E7%BD%B2%E6%95%99%E7%A8%8B)
+
+[nodeseek用户@sdo888编写的教程](https://www.nodeseek.com/post-196832-1)
 
 
 ## Pages部署教程：
